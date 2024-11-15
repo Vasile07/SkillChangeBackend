@@ -1,0 +1,28 @@
+<div style="background-color: #DADADA; width: 100%; padding: 40px 0; display: flex; justify-content: center;">
+    <table style="width: 80%; max-width: 600px; border-spacing: 0; background-color: white; margin: 20px auto; padding: 20px;">
+        <tbody>
+        <tr>
+            <td style="text-align: center;">
+                <img src="cid:authImage" alt="auth" style="width: 200px; height: auto;">
+
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight: bold; font-size: 20px; text-align: center;">
+                RESET YOUR PASSWORD
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center; padding: 10px;">
+                We've received a request to reset your password. Please use the code below to proceed with changing your
+                password.
+            </td>
+        </tr>
+        <tr>
+            <td style="background-color: #c4f3fe; padding: 20px; font-weight: bold; font-size: 24px; border-radius: 8px; text-align: center;">
+                <span th:text="${code}"></span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>

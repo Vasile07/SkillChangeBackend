@@ -8,4 +8,6 @@ public interface UserService {
     JwtDto login(LoginDto loginDto);
 
     void save(UserCreateDto userCreateDto);
+
+    void sendMail(String mail);
 }

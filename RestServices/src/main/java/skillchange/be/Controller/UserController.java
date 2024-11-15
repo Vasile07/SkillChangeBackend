@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import skillchange.be.UserService;
 import skillchange.be.dto.JwtDto;
 import skillchange.be.dto.LoginDto;
+import skillchange.be.dto.MailDto;
 import skillchange.be.dto.UserCreateDto;
 
 
@@ -29,5 +30,10 @@ public class UserController {
     @PostMapping("/register")
     public void register(@RequestBody UserCreateDto userCreateDto) {
         userService.save(userCreateDto);
+    }
+
+    @PostMapping("/send-mail")
+    public void sendMail(@RequestBody MailDto mailDto) {
+        userService.sendMail(mailDto.getEmail());
     }
 }
