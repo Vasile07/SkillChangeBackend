@@ -1,15 +1,9 @@
 package skillchange.be.Controller;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import skillchange.be.UserService;
-import skillchange.be.dto.JwtDto;
-import skillchange.be.dto.LoginDto;
-import skillchange.be.dto.MailDto;
-import skillchange.be.dto.UserCreateDto;
+import skillchange.be.dto.*;
 
 
 @RestController
@@ -29,11 +23,26 @@ public class UserController {
 
     @PostMapping("/register")
     public void register(@RequestBody UserCreateDto userCreateDto) {
-        userService.save(userCreateDto);
+        userService.register(userCreateDto);
     }
 
     @PostMapping("/send-mail")
     public void sendMail(@RequestBody MailDto mailDto) {
-        userService.sendMail(mailDto.getEmail());
+        userService.sendResetTokenMail(mailDto.getEmail());
+    }
+
+    @PostMapping("/verify-reset-token")
+    public void verifyResetToken(@RequestBody ResetTokenValidateDto resetTokenValidateDto) {
+        userService.validateResetToken(resetTokenValidateDto);
+    }
+
+    @PutMapping("/reset-password")
+    public void resetPassword(@RequestBody ResetPasswordDto resetPasswordDto) {
+        userService.resetPassword(resetPasswordDto);
+    }
+
+    @GetMapping("")
+    public UserViewDto getProfileData() {
+        return userService.getProfileData("");
     }
 }

@@ -1,13 +1,17 @@
 package skillchange.be;
 
-import skillchange.be.dto.JwtDto;
-import skillchange.be.dto.LoginDto;
-import skillchange.be.dto.UserCreateDto;
+import skillchange.be.dto.*;
 
 public interface UserService {
     JwtDto login(LoginDto loginDto);
 
-    void save(UserCreateDto userCreateDto);
+    void register(UserCreateDto userCreateDto);
 
-    void sendMail(String mail);
+    void sendResetTokenMail(String mail);
+
+    void validateResetToken(ResetTokenValidateDto resetTokenValidateDto);
+
+    void resetPassword(ResetPasswordDto resetPasswordDto);
+
+    UserViewDto getProfileData(String jwt);
 }

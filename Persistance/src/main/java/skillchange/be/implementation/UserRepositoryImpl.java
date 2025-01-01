@@ -7,6 +7,7 @@ import skillchange.be.domain.User;
 import skillchange.be.errors.EntityNotFound;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -47,22 +48,88 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void update(User user) {
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("update users set firstname = ?, lastname = ?, country = ?, email = ?, password = ?, reset_token = ?, profile_picture = ?, description = ? where user_id = ?")
+        ) {
 
+            preparedStatement.setString(1, user.getFirstname());
+            preparedStatement.setString(2, user.getLastname());
+            preparedStatement.setString(3, user.getCountry());
+            preparedStatement.setString(4, user.getEmail());
+            preparedStatement.setString(5, user.getPassword());
+            preparedStatement.setString(6, user.getResetToken());
+            preparedStatement.setString(7, user.getProfilePicture());
+            preparedStatement.setString(8, user.getDescription());
+            preparedStatement.setInt(9, user.getUserId());
+
+            int cols = preparedStatement.executeUpdate();
+
+            if (cols == 0)
+                throw new RuntimeException("Database error");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public void delete(Integer integer) {
+    public void delete(Integer userId) {
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("delete from users where user_id = ?")
+        ) {
 
+            preparedStatement.setInt(1, userId);
+
+            int cols = preparedStatement.executeUpdate();
+
+            if (cols == 0)
+                throw new RuntimeException("Database error");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public void findById(Integer integer) {
+    public User findById(Integer userId) {
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("select * from Users where user_id = ?")
+        ) {
 
+            preparedStatement.setInt(1, userId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next())
+                return toEntity(resultSet);
+            else
+                throw new EntityNotFound("User with id %d does not exists".formatted(userId));
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public List<User> getAll() {
-        return null;
+        List<User> users = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("select * from Users")
+        ) {
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                users.add(toEntity(resultSet));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return users;
     }
 
     @Override
@@ -93,6 +160,9 @@ public class UserRepositoryImpl implements UserRepository {
         user.setCountry(resultSet.getString("country"));
         user.setEmail(resultSet.getString("email"));
         user.setPassword(resultSet.getString("password"));
+        user.setResetToken(resultSet.getString("reset_token"));
+        user.setProfilePicture(resultSet.getString("profile_picture"));
+        user.setDescription(resultSet.getString("description"));
         return user;
     }
 }

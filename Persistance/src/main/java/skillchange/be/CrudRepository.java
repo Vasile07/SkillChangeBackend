@@ -9,7 +9,7 @@ public interface CrudRepository<ID, E> {
 
     void delete(ID id);
 
-    void findById(ID id);
+    E findById(ID id);
 
     List<E> getAll();
 }

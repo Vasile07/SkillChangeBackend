@@ -13,15 +13,15 @@ import skillchange.be.UserRepository;
 import skillchange.be.UserService;
 import skillchange.be.auth.TokenProvider;
 import skillchange.be.domain.User;
-import skillchange.be.dto.JwtDto;
-import skillchange.be.dto.LoginDto;
-import skillchange.be.dto.UserCreateDto;
+import skillchange.be.dto.*;
 import skillchange.be.errors.BadCredentialsException;
 import skillchange.be.errors.EntityNotFound;
+import skillchange.be.errors.InvalidResetTokenException;
 import skillchange.be.mapper.UserMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -61,20 +61,35 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void save(UserCreateDto userCreateDto) {
+    public void register(UserCreateDto userCreateDto) {
         User user = userMapper.toEntity(userCreateDto);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }
 
     private String getResetCode() {
-        return "1A2B3C";
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder result = new StringBuilder();
+        Random random = new Random();
+
+        for (int i = 0; i < 6; i++) {
+            int index = random.nextInt(characters.length());
+            result.append(characters.charAt(index));
+        }
+
+        return result.toString();
     }
 
     @Override
-    public void sendMail(String mail) {
+    public void sendResetTokenMail(String mail) {
+
         Context context = new Context();
         String resetCode = getResetCode();
+
+        User user = userRepository.findByEmail(mail);
+        user.setResetToken(resetCode);
+        userRepository.update(user);
+
         context.setVariable("code", resetCode);
 
         MimeMessage message = mailSender.createMimeMessage();
@@ -89,7 +104,6 @@ public class UserServiceImpl implements UserService {
             String content = templateEngine.process("emailtemplate", context);
             helper.setText(content, true);
 
-            // Add inline image
             InputStream imageStream = getClass().getResourceAsStream("/images/Passcode.png");
             if (imageStream != null) {
                 ByteArrayDataSource dataSource = new ByteArrayDataSource(imageStream, "image/png");
@@ -98,11 +112,30 @@ public class UserServiceImpl implements UserService {
                 throw new RuntimeException("Image not found in resources");
             }
 
-            // Send the email
             mailSender.send(message);
 
         } catch (MessagingException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void validateResetToken(ResetTokenValidateDto resetTokenValidateDto) {
+        User user = userRepository.findByEmail(resetTokenValidateDto.getEmail());
+        if (!user.getResetToken().equals(resetTokenValidateDto.getResetToken()))
+            throw new InvalidResetTokenException("Invalid reset token provided");
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordDto resetPasswordDto) {
+        User user = userRepository.findByEmail(resetPasswordDto.getEmail());
+        user.setPassword(passwordEncoder.encode(resetPasswordDto.getPassword()));
+        userRepository.update(user);
+    }
+
+    @Override
+    public UserViewDto getProfileData(String jwt) {
+        Integer userId = Integer.valueOf(tokenProvider.validateToken(jwt));
+        return userMapper.toViewDto(userRepository.findById(userId));
     }
 }
