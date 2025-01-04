@@ -7,6 +7,7 @@ import skillchange.be.dto.*;
 
 
 @RestController
+@CrossOrigin
 @RequestMapping("/users")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
