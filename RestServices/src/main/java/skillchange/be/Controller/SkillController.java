@@ -1,11 +1,11 @@
 package skillchange.be.Controller;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.bind.annotation.*;
 import skillchange.be.SkillService;
+import skillchange.be.auth.SecurityFilter;
+import skillchange.be.dto.SkillDetailsDto;
 import skillchange.be.dto.SkillViewDto;
 
 import java.util.List;
@@ -17,9 +17,11 @@ import java.util.List;
 public class SkillController {
 
     private final SkillService skillService;
+    private final SecurityFilter securityFilter;
 
-    public SkillController(SkillService skillService) {
+    public SkillController(SkillService skillService, SecurityFilter securityFilter) {
         this.skillService = skillService;
+        this.securityFilter = securityFilter;
     }
 
     @GetMapping(path = "")
@@ -36,8 +38,13 @@ public class SkillController {
     }
 
     @GetMapping(path = "/mySkills")
-    public List<SkillViewDto> getYourSkills() {
-        String jwt = "";
+    public List<SkillViewDto> getYourSkills(HttpServletRequest request) {
+        String jwt = securityFilter.recoverToken(request);
         return skillService.getYourSkills(jwt);
+    }
+
+    @GetMapping(path = "/details/{skillId}")
+    public SkillDetailsDto getSkillDetails(@PathVariable Integer skillId) {
+        return skillService.getSkillDetails(skillId);
     }
 }

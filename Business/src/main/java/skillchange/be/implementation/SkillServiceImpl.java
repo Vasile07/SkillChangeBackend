@@ -4,6 +4,8 @@ import org.springframework.stereotype.Service;
 import skillchange.be.SkillRepository;
 import skillchange.be.SkillService;
 import skillchange.be.auth.TokenProvider;
+import skillchange.be.domain.Skill;
+import skillchange.be.dto.SkillDetailsDto;
 import skillchange.be.dto.SkillViewDto;
 import skillchange.be.mapper.SkillMapper;
 
@@ -55,5 +57,13 @@ public class SkillServiceImpl implements SkillService {
                     return skillViewDto;
                 })
                 .toList();
+    }
+
+    @Override
+    public SkillDetailsDto getSkillDetails(Integer skillId) {
+        Skill skill = skillRepository.findById(skillId);
+        SkillDetailsDto skillDetailsDto = skillMapper.toSkillDetails(skill);
+        skillDetailsDto.setUsers(skillRepository.getUserLevelForSkill(skillId));
+        return skillDetailsDto;
     }
 }

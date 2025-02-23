@@ -2,9 +2,11 @@ package skillchange.be.implementation;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import skillchange.be.ResultSetConvertor;
 import skillchange.be.SkillRepository;
 import skillchange.be.domain.Skill;
 import skillchange.be.domain.SkillType;
+import skillchange.be.dto.UserSkillDto;
 import skillchange.be.errors.EntityNotFound;
 
 import java.sql.*;
@@ -100,7 +102,7 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                return toEntity(resultSet);
+                return ResultSetConvertor.toSkill(resultSet);
             } else {
                 throw new EntityNotFound("Skill with id %d does not exists.".formatted(skillId));
             }
@@ -121,22 +123,12 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next())
-                skills.add(toEntity(resultSet));
+                skills.add(ResultSetConvertor.toSkill(resultSet));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return skills;
-    }
-
-    private Skill toEntity(ResultSet resultSet) throws SQLException {
-        Skill skill = new Skill();
-        skill.setSkillId(resultSet.getInt("skill_id"));
-        skill.setPicture(resultSet.getString("picture"));
-        skill.setName(resultSet.getString("name"));
-        skill.setDescription(resultSet.getString("description"));
-        skill.setType(getTypeById(resultSet.getInt("type_id")));
-        return skill;
     }
 
     private SkillType getTypeById(int typeId) {
@@ -176,7 +168,7 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next())
-                skills.add(toEntity(resultSet));
+                skills.add(ResultSetConvertor.toSkill(resultSet));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -196,11 +188,38 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next())
-                skills.add(toEntity(resultSet));
+                skills.add(ResultSetConvertor.toSkill(resultSet));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         return skills;
+    }
+
+    @Override
+    public List<UserSkillDto> getUserLevelForSkill(Integer skillId) {
+        List<UserSkillDto> userLevels = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("select U.user_id as 'user_id', U.firstname as 'firstname', U.lastname as 'lastname', US.skill_level as 'skill_level'  from Users U join UserSkills US on US.user_id = U.user_id where US.skill_id = ?")
+        ) {
+
+            preparedStatement.setInt(1, skillId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                UserSkillDto userSkillDto = new UserSkillDto();
+                userSkillDto.setUserId(resultSet.getInt("user_id"));
+                userSkillDto.setFirstname(resultSet.getString("firstname"));
+                userSkillDto.setLastname(resultSet.getString("lastname"));
+                userSkillDto.setSkillLevel(resultSet.getFloat("skill_level"));
+                userLevels.add(userSkillDto);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return userLevels;
     }
 }

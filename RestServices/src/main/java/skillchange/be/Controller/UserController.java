@@ -1,8 +1,10 @@
 package skillchange.be.Controller;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import skillchange.be.UserService;
+import skillchange.be.auth.SecurityFilter;
 import skillchange.be.dto.*;
 
 
@@ -12,9 +14,11 @@ import skillchange.be.dto.*;
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
     private final UserService userService;
+    private final SecurityFilter securityFilter;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, SecurityFilter securityFilter) {
         this.userService = userService;
+        this.securityFilter = securityFilter;
     }
 
     @PostMapping("/login")
@@ -43,7 +47,7 @@ public class UserController {
     }
 
     @GetMapping("")
-    public UserViewDto getProfileData() {
-        return userService.getProfileData("");
+    public UserViewDto getProfileData(HttpServletRequest request) {
+        return userService.getProfileData(securityFilter.recoverToken(request));
     }
 }

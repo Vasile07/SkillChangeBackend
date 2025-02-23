@@ -2,6 +2,7 @@ package skillchange.be.implementation;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
+import skillchange.be.ResultSetConvertor;
 import skillchange.be.UserRepository;
 import skillchange.be.domain.User;
 import skillchange.be.errors.EntityNotFound;
@@ -103,7 +104,7 @@ public class UserRepositoryImpl implements UserRepository {
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next())
-                return toEntity(resultSet);
+                return ResultSetConvertor.toUser(resultSet);
             else
                 throw new EntityNotFound("User with id %d does not exists".formatted(userId));
 
@@ -123,7 +124,7 @@ public class UserRepositoryImpl implements UserRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                users.add(toEntity(resultSet));
+                users.add(ResultSetConvertor.toUser(resultSet));
             }
 
         } catch (SQLException e) {
@@ -143,26 +144,12 @@ public class UserRepositoryImpl implements UserRepository {
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next())
-                return toEntity(resultSet);
+                return ResultSetConvertor.toUser(resultSet);
             else
                 throw new EntityNotFound("User with email %s does not exists".formatted(email));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private User toEntity(ResultSet resultSet) throws SQLException {
-        User user = new User();
-        user.setUserId(resultSet.getInt("user_id"));
-        user.setFirstname(resultSet.getString("firstname"));
-        user.setLastname(resultSet.getString("lastname"));
-        user.setCountry(resultSet.getString("country"));
-        user.setEmail(resultSet.getString("email"));
-        user.setPassword(resultSet.getString("password"));
-        user.setResetToken(resultSet.getString("reset_token"));
-        user.setProfilePicture(resultSet.getString("profile_picture"));
-        user.setDescription(resultSet.getString("description"));
-        return user;
     }
 }
