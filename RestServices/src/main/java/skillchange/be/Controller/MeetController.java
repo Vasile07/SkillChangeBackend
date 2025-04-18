@@ -3,10 +3,12 @@ package skillchange.be.Controller;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import skillchange.be.MeetService;
 import skillchange.be.auth.SecurityFilter;
+import skillchange.be.dto.MeetCreateDto;
 
 @RestController
 @RequestMapping("/meets")
@@ -18,6 +20,12 @@ public class MeetController {
     public MeetController(MeetService meetService, SecurityFilter securityFilter) {
         this.meetService = meetService;
         this.securityFilter = securityFilter;
+    }
+
+    @PostMapping(path = "")
+    public void addMeet(MeetCreateDto meetCreateDto, HttpServletRequest request) {
+        String jwt = securityFilter.recoverToken(request);
+        meetService.addMeet(meetCreateDto, jwt);
     }
 
     @GetMapping(path = "/todayMeets/count")

@@ -6,6 +6,7 @@ import skillchange.be.ResultSetConvertor;
 import skillchange.be.SkillRepository;
 import skillchange.be.domain.Skill;
 import skillchange.be.domain.SkillType;
+import skillchange.be.dto.SkillViewDto;
 import skillchange.be.dto.UserSkillDto;
 import skillchange.be.errors.EntityNotFound;
 
@@ -23,7 +24,10 @@ public class SkillRepositoryImpl implements SkillRepository {
     @Value(value = "${spring.datasource.password}")
     private String password;
 
-    public SkillRepositoryImpl() {
+    private final ResultSetConvertor resultSetConvertor;
+
+    public SkillRepositoryImpl(ResultSetConvertor resultSetConvertor) {
+        this.resultSetConvertor = resultSetConvertor;
     }
 
     @Override
@@ -102,7 +106,7 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
-                return ResultSetConvertor.toSkill(resultSet);
+                return resultSetConvertor.toSkill(resultSet);
             } else {
                 throw new EntityNotFound("Skill with id %d does not exists.".formatted(skillId));
             }
@@ -123,7 +127,7 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next())
-                skills.add(ResultSetConvertor.toSkill(resultSet));
+                skills.add(resultSetConvertor.toSkill(resultSet));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -168,7 +172,7 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next())
-                skills.add(ResultSetConvertor.toSkill(resultSet));
+                skills.add(resultSetConvertor.toSkill(resultSet));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -188,7 +192,7 @@ public class SkillRepositoryImpl implements SkillRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next())
-                skills.add(ResultSetConvertor.toSkill(resultSet));
+                skills.add(resultSetConvertor.toSkill(resultSet));
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -201,7 +205,7 @@ public class SkillRepositoryImpl implements SkillRepository {
         List<UserSkillDto> userLevels = new ArrayList<>();
         try (
                 Connection connection = DriverManager.getConnection(connectionString, username, password);
-                PreparedStatement preparedStatement = connection.prepareStatement("select U.user_id as 'user_id', U.firstname as 'firstname', U.lastname as 'lastname', US.skill_level as 'skill_level'  from Users U join UserSkills US on US.user_id = U.user_id where US.skill_id = ?")
+                PreparedStatement preparedStatement = connection.prepareStatement("select U.user_id as 'user_id', U.profile_picture, U.firstname as 'firstname', U.lastname as 'lastname', US.skill_level as 'skill_level'  from Users U join UserSkills US on US.user_id = U.user_id where US.skill_id = ?")
         ) {
 
             preparedStatement.setInt(1, skillId);
@@ -213,6 +217,7 @@ public class SkillRepositoryImpl implements SkillRepository {
                 userSkillDto.setUserId(resultSet.getInt("user_id"));
                 userSkillDto.setFirstname(resultSet.getString("firstname"));
                 userSkillDto.setLastname(resultSet.getString("lastname"));
+                userSkillDto.setProfilePicture(resultSet.getString("profile_picture"));
                 userSkillDto.setSkillLevel(resultSet.getFloat("skill_level"));
                 userLevels.add(userSkillDto);
             }
@@ -221,5 +226,51 @@ public class SkillRepositoryImpl implements SkillRepository {
             throw new RuntimeException(e);
         }
         return userLevels;
+    }
+
+    @Override
+    public List<SkillViewDto> getRecommendedSkills(Integer userId) {
+        List<SkillViewDto> skills = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(connectionString, username, password)) {
+            CallableStatement stmt = conn.prepareCall("{call GetWeightedRandomSkill(?)}");
+            stmt.setInt(1, userId);
+
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                int skillId = rs.getInt("skill_id");
+                String name = rs.getString("name");
+                String picutre = rs.getString("picture");
+                SkillViewDto skillViewDto = new SkillViewDto();
+                skillViewDto.setSkillId(skillId);
+                skillViewDto.setPicture(picutre);
+                skillViewDto.setName(name);
+                skills.add(skillViewDto);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return skills;
+    }
+
+    private List<Integer> getSkillIdsByUserLocation(Integer userId) {
+        List<Integer> skillIds = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("select S.type_id from Users U right join UserSkills US on US.user_id = U.user_id join Skills S on S.skill_id = US.skill_id where U.country = (select U1.country from Users U1 where U1.user_id = ?)")
+        ) {
+
+            preparedStatement.setInt(1, userId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                skillIds.add(resultSet.getInt("type_id"));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return skillIds;
     }
 }

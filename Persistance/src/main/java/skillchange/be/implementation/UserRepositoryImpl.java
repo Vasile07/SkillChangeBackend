@@ -21,7 +21,10 @@ public class UserRepositoryImpl implements UserRepository {
     @Value(value = "${spring.datasource.password}")
     private String password;
 
-    public UserRepositoryImpl() {
+    private final ResultSetConvertor resultSetConvertor;
+
+    public UserRepositoryImpl(ResultSetConvertor resultSetConvertor) {
+        this.resultSetConvertor = resultSetConvertor;
     }
 
     @Override
@@ -104,7 +107,7 @@ public class UserRepositoryImpl implements UserRepository {
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next())
-                return ResultSetConvertor.toUser(resultSet);
+                return resultSetConvertor.toUser(resultSet);
             else
                 throw new EntityNotFound("User with id %d does not exists".formatted(userId));
 
@@ -124,7 +127,7 @@ public class UserRepositoryImpl implements UserRepository {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                users.add(ResultSetConvertor.toUser(resultSet));
+                users.add(resultSetConvertor.toUser(resultSet));
             }
 
         } catch (SQLException e) {
@@ -144,7 +147,7 @@ public class UserRepositoryImpl implements UserRepository {
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next())
-                return ResultSetConvertor.toUser(resultSet);
+                return resultSetConvertor.toUser(resultSet);
             else
                 throw new EntityNotFound("User with email %s does not exists".formatted(email));
 

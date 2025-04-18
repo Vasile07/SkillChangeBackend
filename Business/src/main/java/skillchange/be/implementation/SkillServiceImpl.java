@@ -8,8 +8,13 @@ import skillchange.be.domain.Skill;
 import skillchange.be.dto.SkillDetailsDto;
 import skillchange.be.dto.SkillViewDto;
 import skillchange.be.mapper.SkillMapper;
+import skillchange.be.utils.Pair;
 
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class SkillServiceImpl implements SkillService {
@@ -65,5 +70,23 @@ public class SkillServiceImpl implements SkillService {
         SkillDetailsDto skillDetailsDto = skillMapper.toSkillDetails(skill);
         skillDetailsDto.setUsers(skillRepository.getUserLevelForSkill(skillId));
         return skillDetailsDto;
+    }
+
+    private Map<Integer, Pair<LocalTime, List<SkillViewDto>>> recommendedSkills = new HashMap<>();
+
+    @Override
+    public List<SkillViewDto> getRecommendedSkills(String jwt) {
+
+        Integer userId = Integer.valueOf(tokenProvider.validateToken(jwt));
+        Pair<LocalTime, List<SkillViewDto>> pair = recommendedSkills.get(userId);
+        List<SkillViewDto> skills;
+        if (pair == null || ChronoUnit.MINUTES.between(pair.getFirst(), LocalTime.now()) > 5) {
+            do {
+                skills = skillRepository.getRecommendedSkills(userId);
+            } while (skills.size() != 3);
+            recommendedSkills.put(userId, new Pair<>(LocalTime.now(), skills));
+        } else
+            skills = pair.getSecond();
+        return skills;
     }
 }

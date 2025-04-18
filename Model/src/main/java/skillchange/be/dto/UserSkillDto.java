@@ -11,5 +11,6 @@ public class UserSkillDto {
     private Integer userId;
     private String firstname;
     private String lastname;
+    private String profilePicture;
     private Float skillLevel;
 }

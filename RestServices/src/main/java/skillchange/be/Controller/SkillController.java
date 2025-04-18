@@ -47,4 +47,10 @@ public class SkillController {
     public SkillDetailsDto getSkillDetails(@PathVariable Integer skillId) {
         return skillService.getSkillDetails(skillId);
     }
+
+    @GetMapping(path = "/recommendedSkills")
+    public List<SkillViewDto> getRecommendedSkills(HttpServletRequest request) {
+        String jwt = securityFilter.recoverToken(request);
+        return skillService.getRecommendedSkills(jwt);
+    }
 }

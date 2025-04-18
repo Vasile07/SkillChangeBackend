@@ -14,7 +14,8 @@ import java.util.List;
 public class Meet {
     private Integer meetId;
     private Date day;
-    private Time hour;
+    private Time startHour;
+    private Time endHour;
     private Skill skill;
     private String color;
     private List<User> users;

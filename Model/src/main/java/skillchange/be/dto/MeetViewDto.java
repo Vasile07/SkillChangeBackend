@@ -1,0 +1,13 @@
+package skillchange.be.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class MeetViewDto {
+    private String skillName;
+    private String meetProgress;
+}

@@ -1,6 +1,7 @@
 package skillchange.be;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import skillchange.be.domain.Meet;
 import skillchange.be.domain.Skill;
 import skillchange.be.domain.SkillType;
@@ -11,15 +12,19 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class ResultSetConvertor {
     @Value(value = "${spring.datasource.url}")
-    private static String connectionString;
+    private String connectionString;
     @Value(value = "${spring.datasource.username}")
-    private static String username;
+    private String username;
     @Value(value = "${spring.datasource.password}")
-    private static String password;
+    private String password;
 
-    public static User toUser(ResultSet resultSet) throws SQLException {
+    public ResultSetConvertor() {
+    }
+
+    public User toUser(ResultSet resultSet) throws SQLException {
         User user = new User();
         user.setUserId(resultSet.getInt("user_id"));
         user.setFirstname(resultSet.getString("firstname"));
@@ -33,18 +38,19 @@ public class ResultSetConvertor {
         return user;
     }
 
-    public static Meet toMeet(ResultSet resultSet) throws SQLException {
+    public Meet toMeet(ResultSet resultSet) throws SQLException {
         Meet meet = new Meet();
         meet.setMeetId(resultSet.getInt("meet_id"));
         meet.setDay(resultSet.getDate("day"));
-        meet.setHour(resultSet.getTime("hour"));
+        meet.setStartHour(resultSet.getTime("start_hour"));
+        meet.setEndHour(resultSet.getTime("end_hour"));
         meet.setColor(resultSet.getString("color"));
         meet.setSkill(getSkill(resultSet.getInt("skill_id")));
         meet.setUsers(getUsersFromMeet(resultSet.getInt("meet_id")));
         return meet;
     }
 
-    public static Skill toSkill(ResultSet resultSet) throws SQLException {
+    public Skill toSkill(ResultSet resultSet) throws SQLException {
         Skill skill = new Skill();
         skill.setSkillId(resultSet.getInt("skill_id"));
         skill.setPicture(resultSet.getString("picture"));
@@ -55,7 +61,7 @@ public class ResultSetConvertor {
     }
 
 
-    private static SkillType getTypeById(int typeId) {
+    private SkillType getTypeById(int typeId) {
         try (
                 Connection connection = DriverManager.getConnection(connectionString, username, password);
                 PreparedStatement preparedStatement = connection.prepareStatement("select * from SkillTypes where type_id = ?")
@@ -80,7 +86,7 @@ public class ResultSetConvertor {
     }
 
 
-    private static Skill getSkill(int skillId) {
+    private Skill getSkill(int skillId) {
         try (
                 Connection connection = DriverManager.getConnection(connectionString, username, password);
                 PreparedStatement preparedStatement = connection.prepareStatement("select * from Skills where skill_id = ?")
@@ -101,7 +107,7 @@ public class ResultSetConvertor {
         }
     }
 
-    private static List<User> getUsersFromMeet(Integer meetId) {
+    private List<User> getUsersFromMeet(Integer meetId) {
         List<User> users = new ArrayList<>();
         try (
                 Connection connection = DriverManager.getConnection(connectionString, username, password);
@@ -113,7 +119,7 @@ public class ResultSetConvertor {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
-                users.add(ResultSetConvertor.toUser(resultSet));
+                users.add(toUser(resultSet));
             }
 
         } catch (SQLException e) {
