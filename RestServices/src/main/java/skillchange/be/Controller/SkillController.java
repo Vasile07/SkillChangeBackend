@@ -24,10 +24,10 @@ public class SkillController {
         this.securityFilter = securityFilter;
     }
 
-    @GetMapping(path = "")
-    public List<SkillViewDto> getAllSkills() {
-        return skillService.getAllSkills();
-    }
+//    @GetMapping(path = "")
+//    public List<SkillViewDto> getAllSkills() {
+//        return skillService.getAllSkills();
+//    }
 
     @GetMapping("/byType")
     public List<SkillViewDto> getSkillsByType(@RequestParam(required = false) String type) {
@@ -37,10 +37,15 @@ public class SkillController {
             return skillService.getAllSkills();
     }
 
-    @GetMapping(path = "/mySkills")
-    public List<SkillViewDto> getYourSkills(HttpServletRequest request) {
+    @GetMapping({"", "/{userId}"})
+    public List<SkillViewDto> getUserSkills(@PathVariable(required = false) Integer userId, HttpServletRequest request) {
         String jwt = securityFilter.recoverToken(request);
-        return skillService.getYourSkills(jwt);
+        if (userId != null) {
+            return skillService.getYourSkills(userId);
+        } else {
+            return skillService.getYourSkills(jwt);
+        }
+
     }
 
     @GetMapping(path = "/details/{skillId}")

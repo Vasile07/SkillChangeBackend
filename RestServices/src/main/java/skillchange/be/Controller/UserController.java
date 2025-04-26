@@ -46,8 +46,18 @@ public class UserController {
         userService.resetPassword(resetPasswordDto);
     }
 
-    @GetMapping("")
-    public UserViewDto getProfileData(HttpServletRequest request) {
-        return userService.getProfileData(securityFilter.recoverToken(request));
+    @GetMapping({"", "/{userId}"})
+    public UserViewDto getProfileData(
+            @PathVariable(required = false) Integer userId,
+            HttpServletRequest request) {
+
+        String token = securityFilter.recoverToken(request);
+
+        if (userId != null) {
+            return userService.getProfileData(userId);
+        } else {
+            return userService.getProfileData(token);
+        }
     }
+
 }

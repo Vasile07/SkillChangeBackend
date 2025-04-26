@@ -138,4 +138,9 @@ public class UserServiceImpl implements UserService {
         Integer userId = Integer.valueOf(tokenProvider.validateToken(jwt));
         return userMapper.toViewDto(userRepository.findById(userId));
     }
+
+    @Override
+    public UserViewDto getProfileData(Integer userId) {
+        return userMapper.toViewDto(userRepository.findById(userId));
+    }
 }

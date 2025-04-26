@@ -15,4 +15,6 @@ public interface SkillService {
     SkillDetailsDto getSkillDetails(Integer skillId);
 
     List<SkillViewDto> getRecommendedSkills(String jwt);
+
+    List<SkillViewDto> getYourSkills(Integer userId);
 }

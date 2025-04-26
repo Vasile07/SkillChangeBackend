@@ -89,4 +89,18 @@ public class SkillServiceImpl implements SkillService {
             skills = pair.getSecond();
         return skills;
     }
+
+    @Override
+    public List<SkillViewDto> getYourSkills(Integer userId) {
+        Pair<LocalTime, List<SkillViewDto>> pair = recommendedSkills.get(userId);
+        List<SkillViewDto> skills;
+        if (pair == null || ChronoUnit.MINUTES.between(pair.getFirst(), LocalTime.now()) > 5) {
+            do {
+                skills = skillRepository.getRecommendedSkills(userId);
+            } while (skills.size() != 3);
+            recommendedSkills.put(userId, new Pair<>(LocalTime.now(), skills));
+        } else
+            skills = pair.getSecond();
+        return skills;
+    }
 }

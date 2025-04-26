@@ -14,4 +14,6 @@ public interface UserService {
     void resetPassword(ResetPasswordDto resetPasswordDto);
 
     UserViewDto getProfileData(String jwt);
+
+    UserViewDto getProfileData(Integer userId);
 }
