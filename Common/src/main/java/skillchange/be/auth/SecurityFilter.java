@@ -22,29 +22,23 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         var token = recoverToken(request);
-
         if (token != null) {
-            var userId = tokenProvider.validateToken(token); // Use validateToken to get user ID
-
+            var userId = tokenProvider.validateToken(token);
             if (userId != null) {
-                // Set userId as the principal without authorities
                 var authentication = new UsernamePasswordAuthenticationToken(userId, null, null);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
                 throw new EntityNotFound("User not found based on JWT");
             }
         }
-
         filterChain.doFilter(request, response);
     }
 
     public String recoverToken(HttpServletRequest request) {
         var authHeader = request.getHeader("Authorization");
-
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;
         }
-
         return authHeader.replace("Bearer ", "");
     }
 }

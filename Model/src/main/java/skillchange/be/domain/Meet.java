@@ -18,5 +18,6 @@ public class Meet {
     private Time endHour;
     private Skill skill;
     private String color;
+    private String address;
     private List<User> users;
 }

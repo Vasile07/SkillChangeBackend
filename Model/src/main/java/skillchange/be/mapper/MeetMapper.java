@@ -17,10 +17,12 @@ public interface MeetMapper {
     Meet toMeet(MeetCreateDto meetCreateDto);
 
     default Date mapStringToDate(String date) {
+        System.out.println(date);
         return Date.valueOf(date);
     }
 
     default Time mapStringToTime(String time) {
+        System.out.println(time);
         return Time.valueOf(time);
     }
 

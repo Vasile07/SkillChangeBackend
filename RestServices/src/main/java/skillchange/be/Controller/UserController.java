@@ -7,6 +7,8 @@ import skillchange.be.UserService;
 import skillchange.be.auth.SecurityFilter;
 import skillchange.be.dto.*;
 
+import java.util.List;
+
 
 @RestController
 @CrossOrigin
@@ -60,4 +62,26 @@ public class UserController {
         }
     }
 
+    @GetMapping("/myFriends")
+    public List<UserViewDto> getMyFriends(HttpServletRequest request) {
+        String jwt = securityFilter.recoverToken(request);
+        return userService.getMyFriends(jwt);
+    }
+
+    @PostMapping("/follow")
+    public void follow(@RequestBody Integer followingUserId, HttpServletRequest request) {
+        String jwt = securityFilter.recoverToken(request);
+        userService.follow(jwt, followingUserId);
+    }
+
+    @GetMapping({"/followers", "/followers/{userId}"})
+    public List<UserViewDto> getFollowers(@PathVariable(required = false) Integer userId, HttpServletRequest request) {
+        String token = securityFilter.recoverToken(request);
+
+        if (userId != null) {
+            return userService.getFollowers(userId);
+        } else {
+            return userService.getFollowers(token);
+        }
+    }
 }

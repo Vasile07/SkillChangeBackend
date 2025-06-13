@@ -21,6 +21,7 @@ import skillchange.be.mapper.UserMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -142,5 +143,28 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserViewDto getProfileData(Integer userId) {
         return userMapper.toViewDto(userRepository.findById(userId));
+    }
+
+    @Override
+    public List<UserViewDto> getMyFriends(String jwt) {
+        Integer userId = Integer.valueOf(tokenProvider.validateToken(jwt));
+        return userRepository.getMyFriends(userId).stream().map(userMapper::toViewDto).toList();
+    }
+
+    @Override
+    public void follow(String jwt, Integer followingUserId) {
+        Integer followerUser = Integer.valueOf(tokenProvider.validateToken(jwt));
+        userRepository.follow(followerUser, followingUserId);
+    }
+
+    @Override
+    public List<UserViewDto> getFollowers(String token) {
+        Integer userId = Integer.valueOf(tokenProvider.validateToken(token));
+        return getFollowers(userId);
+    }
+
+    @Override
+    public List<UserViewDto> getFollowers(Integer userId) {
+        return userRepository.getMyFollowers(userId).stream().map(userMapper::toViewDto).toList();
     }
 }

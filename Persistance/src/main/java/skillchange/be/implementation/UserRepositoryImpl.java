@@ -155,4 +155,66 @@ public class UserRepositoryImpl implements UserRepository {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public List<User> getMyFriends(Integer userId) {
+        List<User> friends = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("select U.* from Users U join Follows F on U.user_id = F.following_id where F.follower_id = ?")
+        ) {
+
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                friends.add(resultSetConvertor.toUser(resultSet));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return friends;
+    }
+
+    @Override
+    public void follow(Integer followerUser, Integer followingUserId) {
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("insert into Follows(follower_id, following_id) values (?,?)")
+        ) {
+
+            preparedStatement.setInt(1, followerUser);
+            preparedStatement.setInt(2, followingUserId);
+
+            int cols = preparedStatement.executeUpdate();
+
+            if (cols == 0)
+                throw new RuntimeException("Database error");
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<User> getMyFollowers(Integer userId) {
+        List<User> followers = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("select U.* from Users U join Follows F on U.user_id = F.follower_id where F.following_id = ?")
+        ) {
+
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) {
+                followers.add(resultSetConvertor.toUser(resultSet));
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return followers;
+    }
 }

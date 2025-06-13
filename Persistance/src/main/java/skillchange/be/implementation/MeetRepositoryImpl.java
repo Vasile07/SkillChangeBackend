@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository;
 import skillchange.be.MeetRepository;
 import skillchange.be.domain.Meet;
 import skillchange.be.domain.User;
-import skillchange.be.dto.MeetViewDto;
+import skillchange.be.dto.*;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -114,7 +114,7 @@ public class MeetRepositoryImpl implements MeetRepository {
     }
 
     @Override
-    public List<MeetViewDto> getMyMeetsFromDate(Date date, Integer userId) {
+    public List<MeetViewDto> getMeetsFromDate(Date date, Integer userId) {
         List<MeetViewDto> meets = new ArrayList<>();
         try (
                 Connection connection = DriverManager.getConnection(connectionString, username, password);
@@ -148,4 +148,161 @@ public class MeetRepositoryImpl implements MeetRepository {
         }
         return meets;
     }
+
+    @Override
+    public Integer getNumberOfTotalMeets(Integer userId) {
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("select count(distinct UM.meet_id) as 'meets_count' from UserMeets UM where UM.user_id = ?")
+        ) {
+
+            preparedStatement.setInt(1, userId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                return resultSet.getInt("meets_count");
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<TodayMeetDetail> getMeetsFromToday(Integer userId) {
+        List<TodayMeetDetail> meets = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement(
+                        """
+                                SELECT
+                                    S.name AS activity_name,
+                                    CONCAT( 
+                                            LEFT(CONVERT(varchar, M.start_hour, 108), 5),
+                                            ' - ',
+                                            LEFT(CONVERT(varchar, M.end_hour, 108), 5)
+                                        ) AS hour,
+                                    CASE
+                                        WHEN CONVERT(TIME, GETDATE()) BETWEEN M.start_hour AND M.end_hour THEN 'IN_PROGRESS'
+                                        WHEN CONVERT(TIME, GETDATE()) < M.start_hour THEN 'UPCOMING'
+                                        ELSE 'DONE'
+                                    END AS meet_state
+                                FROM Meets M
+                                JOIN UserMeets US ON US.meet_id = M.meet_id
+                                JOIN Skills S ON S.skill_id = M.skill_id
+                                WHERE CAST(M.day AS DATE) = CAST(GETDATE() AS DATE)
+                                AND US.user_id = ?
+                                ORDER BY M.start_hour
+                                ;
+                                """
+                );
+
+        ) {
+            preparedStatement.setInt(1, userId);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                String activityName = resultSet.getString("activity_name");
+                String hour = resultSet.getString("hour");
+                String stateStr = resultSet.getString("meet_state");
+
+                MeetState meetState = MeetState.valueOf(stateStr); // must match enum
+
+                TodayMeetDetail detail = new TodayMeetDetail(meetState, activityName, hour);
+                meets.add(detail);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return meets;
+    }
+
+    @Override
+    public List<FutureMeetDetails> getNextMeets(Integer userId) {
+        List<FutureMeetDetails> meetDetails = new ArrayList<>();
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement(
+                        """
+                                SELECT TOP 3
+                                    S.name AS activity_name,
+                                    S.picture AS activity_picture,
+                                    CONVERT(varchar, M.start_hour, 108) AS start_hour,
+                                    CONVERT(varchar, M.end_hour, 108) AS end_hour,
+                                    FORMAT(M.day, 'yyyy-MM-dd') AS date,
+                                    M.address,
+                                    M.meet_id,
+                                    M.color
+                                FROM Meets M
+                                JOIN UserMeets UM ON UM.meet_id = M.meet_id
+                                JOIN Skills S ON S.skill_id = M.skill_id
+                                WHERE UM.user_id = ?
+                                  AND (M.day > CAST(GETDATE() AS DATE))
+                                ORDER BY M.day, M.start_hour
+                                """
+                )
+        ) {
+            preparedStatement.setInt(1, userId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                int meetId = resultSet.getInt("meet_id");
+
+                String activityName = resultSet.getString("activity_name");
+                String activityPicture = resultSet.getString("activity_picture");
+                String startHour = resultSet.getString("start_hour");
+                String endHour = resultSet.getString("end_hour");
+                String date = resultSet.getString("date");
+                String address = resultSet.getString("address");
+                String color = resultSet.getString("color");
+
+                List<UserMeetDto> users = getUsersForMeet(meetId, connection);
+
+                FutureMeetDetails detail = new FutureMeetDetails(
+                        activityName,
+                        activityPicture,
+                        startHour,
+                        endHour,
+                        date,
+                        address,
+                        users,
+                        color
+                );
+
+                meetDetails.add(detail);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return meetDetails;
+    }
+
+    private List<UserMeetDto> getUsersForMeet(int meetId, Connection connection) throws SQLException {
+        List<UserMeetDto> users = new ArrayList<>();
+
+        String query = """
+                SELECT U.firstname, U.lastname, U.profile_picture
+                FROM Users U
+                JOIN UserMeets UM ON UM.user_id = U.user_id
+                WHERE UM.meet_id = ?
+                """;
+
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, meetId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                String firstname = rs.getString("firstname");
+                String lastname = rs.getString("lastname");
+                String profilePicture = rs.getString("profile_picture");
+
+                users.add(new UserMeetDto(firstname, lastname, profilePicture));
+            }
+        }
+
+        return users;
+    }
+
 }

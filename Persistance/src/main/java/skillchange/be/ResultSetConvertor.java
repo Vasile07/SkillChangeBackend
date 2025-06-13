@@ -2,10 +2,7 @@ package skillchange.be;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import skillchange.be.domain.Meet;
-import skillchange.be.domain.Skill;
-import skillchange.be.domain.SkillType;
-import skillchange.be.domain.User;
+import skillchange.be.domain.*;
 import skillchange.be.errors.EntityNotFound;
 
 import java.sql.*;
@@ -126,5 +123,15 @@ public class ResultSetConvertor {
             throw new RuntimeException(e);
         }
         return users;
+    }
+
+    public Message toMessage(ResultSet resultSet) throws SQLException {
+        Message message = new Message();
+        message.setMessageId(resultSet.getInt("message_id"));
+        message.setMessage(resultSet.getString("message"));
+        message.setSenderId(resultSet.getInt("sender_id"));
+        message.setReceiverId(resultSet.getInt("receiver_id"));
+        message.setIsRead(resultSet.getBoolean("isRead"));
+        return message;
     }
 }

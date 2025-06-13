@@ -2,6 +2,8 @@ package skillchange.be;
 
 import skillchange.be.dto.*;
 
+import java.util.List;
+
 public interface UserService {
     JwtDto login(LoginDto loginDto);
 
@@ -16,4 +18,12 @@ public interface UserService {
     UserViewDto getProfileData(String jwt);
 
     UserViewDto getProfileData(Integer userId);
+
+    List<UserViewDto> getMyFriends(String jwt);
+
+    void follow(String jwt, Integer followingUserId);
+
+    List<UserViewDto> getFollowers(String token);
+
+    List<UserViewDto> getFollowers(Integer userId);
 }
