@@ -9,6 +9,7 @@ import java.sql.Date;
 import java.util.List;
 
 public interface MeetRepository extends CrudRepository<Integer, Meet> {
+    Meet saveMeet(Meet meet);
     Integer numberOfMeetsInADayForAUser(Date date, Integer userId);
 
     List<MeetViewDto> getMeetsFromDate(Date date, Integer userId);

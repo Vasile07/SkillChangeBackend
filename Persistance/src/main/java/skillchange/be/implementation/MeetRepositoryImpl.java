@@ -93,6 +93,39 @@ public class MeetRepositoryImpl implements MeetRepository {
     }
 
     @Override
+    public Meet saveMeet(Meet meet) {
+        try (
+                Connection connection = DriverManager.getConnection(connectionString, username, password);
+                PreparedStatement preparedStatement = connection.prepareStatement("insert into Meets(day, start_hour,end_hour, skill_id, color) values (?,?,?,?,?)", Statement.RETURN_GENERATED_KEYS)
+        ) {
+            preparedStatement.setDate(1, meet.getDay());
+            preparedStatement.setTime(2, meet.getStartHour());
+            preparedStatement.setTime(3, meet.getEndHour());
+            preparedStatement.setInt(4, meet.getSkill().getSkillId());
+            preparedStatement.setString(5, meet.getColor());
+
+            int cols = preparedStatement.executeUpdate();
+
+            if (cols == 0)
+                throw new RuntimeException("Database error");
+
+            // meetId = getLastIdInsertedBefore
+            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    int meetId = generatedKeys.getInt(1);
+                    meet.setMeetId(meetId);
+                    saveMeetUsers(meet.getUsers(), meetId);
+                } else {
+                    throw new RuntimeException("Failed to retrieve generated meet ID");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return meet;
+    }
+
+    @Override
     public Integer numberOfMeetsInADayForAUser(Date date, Integer userId) {
         try (
                 Connection connection = DriverManager.getConnection(connectionString, username, password);
